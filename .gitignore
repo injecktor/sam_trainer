@@ -1,5 +1,4 @@
 Release/
 sam_trainer/Release
-sam_trainer/vcxproj*.user
 sam_trainer_log.txt
 .vs
