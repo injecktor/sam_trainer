@@ -16,11 +16,15 @@ extern HANDLE sam_process;
 // Separate variable due to assemble call
 extern PVOID get_group_mover_orig_func;
 
+struct s_func;
+extern shared_ptr<s_func> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover;
+
+// game functions
 extern void __fastcall ReceiveHealth(PVOID entity, long health_change, long arg1);
 extern void __fastcall ReceiveArmor(PVOID entity, long armor_change, long arg1);
-
 extern void GetGroupMover();
 
+// local functions
 extern void* __cdecl method_to_ptr(...);
 
 template<typename... Args>
@@ -58,13 +62,13 @@ struct s_module {
 };
 
 struct s_func {
-	s_module* module;
+	shared_ptr<s_module> module;
 	PVOID orig_func;
 	PVOID detour_func;
 	string pattern;
 	string mask;
 	s_func() = delete;
-	explicit s_func(LPCTSTR func_name, s_module* module, string pattern, string mask, PVOID detour_func, bool hook, bool hex_string) {
+	explicit s_func(LPCTSTR func_name, shared_ptr<s_module> module, string pattern, string mask, PVOID detour_func, bool hook, bool hex_string) {
 		this->module = module;
 		this->detour_func = detour_func;
 		if (!hex_string) {
@@ -85,5 +89,3 @@ struct s_func {
 		}
 	}
 };
-
-extern s_func *receive_health, *receive_armor, *hv_handle_to_pointer, *get_player, *get_group_mover;

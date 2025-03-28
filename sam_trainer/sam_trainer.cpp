@@ -4,9 +4,9 @@ FILE* log_file;
 string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 2022\\projects\\sam_trainer\\sam_trainer_log.txt";
 HANDLE sam_process;
 
-s_module *sam_trainer_dll, *sam2game_dll, *core_dll;
+shared_ptr<s_module> sam_trainer_dll, sam2game_dll, core_dll;
 
-s_func *receive_health, *receive_armor, *hv_handle_to_pointer, *get_group_mover;
+shared_ptr<s_func> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover;
 
 PVOID get_group_mover_orig_func;
 
@@ -17,8 +17,8 @@ __declspec(naked) void* __cdecl method_to_ptr(...) {
     }
 }
 
-void init_module(s_module** module, LPCTSTR name) {
-    *module = new s_module(sam_process, name);
+void init_module(shared_ptr<s_module>* module, LPCTSTR name) {
+    *module = make_shared<s_module>(sam_process, name);
 }
 
 void init_modules() {
@@ -28,14 +28,11 @@ void init_modules() {
 }
 
 void deinit() {
-    delete sam2game_dll;
-    delete core_dll;
-    delete receive_health;
 }
 
-void init_func(s_func** func, LPCTSTR func_name, s_module* module,
+void init_func(shared_ptr<s_func>* func, LPCTSTR func_name, shared_ptr<s_module> module,
     string pattern, string mask, PVOID detour_func, bool hook = true, bool hex_string = false) {
-    *func = new s_func(func_name, module, pattern, mask, detour_func, hook, hex_string);
+    *func = make_shared<s_func>(func_name, module, pattern, mask, detour_func, hook, hex_string);
 }
 
 void init_funcs() {
