@@ -1,4 +1,6 @@
 Release/
 sam_trainer/Release
 sam_trainer_log.txt
+sam_trainer/*vcxproj*.user
 .vs
+*.CSX
