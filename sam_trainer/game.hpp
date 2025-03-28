@@ -1,8 +1,6 @@
 #include "sam_trainer.hpp"
 
-class Entity {
-public:
-    void __thiscall ReceiveHealth(long health_change, long arg1);
-    void __thiscall ReceiveArmor(long armor_change, long arg1);
-    void __thiscall GetPlayer(PVOID arg1);
-};
+extern void __fastcall ReceiveHealth(PVOID entity, long health_change, long arg1);
+extern void __fastcall ReceiveArmor(PVOID entity, long armor_change, long arg1);
+
+extern void GetGroupMover();

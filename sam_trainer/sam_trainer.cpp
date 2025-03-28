@@ -1,10 +1,21 @@
 #include "sam_trainer.hpp"
 
+FILE* log_file;
+string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 2022\\projects\\sam_trainer\\sam_trainer_log.txt";
+HANDLE sam_process;
+
 s_module *sam_trainer_dll, *sam2game_dll, *core_dll;
 
-s_func *receive_health, *receive_armor, *hv_handle_to_pointer, *get_player, *get_group_mover;
+s_func *receive_health, *receive_armor, *hv_handle_to_pointer, *get_group_mover;
 
 PVOID get_group_mover_orig_func;
+
+__declspec(naked) void* __cdecl method_to_ptr(...) {
+    __asm {
+        mov eax, [esp + 4]
+        retn
+    }
+}
 
 void init_module(s_module** module, LPCTSTR name) {
     *module = new s_module(sam_process, name);
@@ -31,7 +42,7 @@ void init_funcs() {
     init_func(&receive_health, _T("ReceiveHealth"), sam2game_dll, 
         "55 8B EC 83 EC 0C 56 8B F1 FF 15 50 29 AA 0E 85 C0 0F 85 8A 00 00 00 8B 86 88 04 00 00 8B 55 08 8B 8E C4 00 00 00 89 45 F4",
         "xxxxxxxxxxxxx??xxxxxxxxxxxxxxxxxxxxxxxxxx",
-        reinterpret_cast<PVOID>(method_to_ptr(&Entity::ReceiveHealth)), true);
+        reinterpret_cast<PVOID>(ReceiveHealth), true);
     init_func(&hv_handle_to_pointer, _T("hvHandleToPointer"), core_dll,
         "55 8B EC 6A FF 68 98 78 BB 00 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 0C 6A 01",
         "xxxxxxxx??xxxxxxxxxxxxxxxxxxx",
@@ -39,11 +50,7 @@ void init_funcs() {
     init_func(&receive_armor, _T("ReceiveArmor"), sam2game_dll,
         "55 8B EC 83 EC 0C 56 8B F1 FF 15 50 29 D4 0E 85 C0 0F 85 8A 00 00 00 8B 86 8C 04 00 00 8B 55 08 8B 8E C8 00 00 00 89 45 F4",
         "xxxxxxxxxxxxx??xxxxxxxxxxxxxxxxxxxxxxxxxx",
-        reinterpret_cast<PVOID>(method_to_ptr(&Entity::ReceiveArmor)), true);
-    init_func(&get_player, _T("GetPlayer"), sam2game_dll,
-        "55 8B EC 83 EC 08 53 56 33 F6 57 89 4D F8 89 75 FC 83 CB FF 8D 79 24 8B 07 50 FF 15 C8 21",
-        "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", 
-        reinterpret_cast<PVOID>(method_to_ptr(&Entity::GetPlayer)), true);
+        reinterpret_cast<PVOID>(ReceiveArmor), true);
     init_func(&get_group_mover, _T("GetGroupMover"), sam2game_dll,
         "55 8B EC 6A FF 68 08 82 5D 10 64 A1 00 00 00 00 50 64 89 25 00 00 00 00 83 EC 14 56 8B F1 \
         8B 46 28 57 8B 3D C8 21 BB 0E 50 FF D7 83 C4 04 85 C0 75 10 5F",

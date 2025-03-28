@@ -9,21 +9,19 @@
 using namespace mem_tool;
 using namespace std;
 
-FILE* log_file;
-string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 2022\\projects\\sam_trainer\\sam_trainer_log.txt";
-HANDLE sam_process;
+extern FILE* log_file;
+extern string log_file_path;
+extern HANDLE sam_process;
 
 // Separate variable due to assemble call
 extern PVOID get_group_mover_orig_func;
 
-extern class Entity;
+extern void __fastcall ReceiveHealth(PVOID entity, long health_change, long arg1);
+extern void __fastcall ReceiveArmor(PVOID entity, long armor_change, long arg1);
 
-__declspec(naked) void* __cdecl method_to_ptr(...) {
-	__asm {
-		mov eax, [esp + 4]
-		retn
-	}
-}
+extern void GetGroupMover();
+
+extern void* __cdecl method_to_ptr(...);
 
 template<typename... Args>
 void print_log(const char* format, Args ...args) {
@@ -67,8 +65,8 @@ struct s_func {
 	string mask;
 	s_func() = delete;
 	explicit s_func(LPCTSTR func_name, s_module* module, string pattern, string mask, PVOID detour_func, bool hook, bool hex_string) {
-		module = module;
-		detour_func = detour_func;
+		this->module = module;
+		this->detour_func = detour_func;
 		if (!hex_string) {
 			pattern = trim(pattern);
 			pattern = str_to_hex_str(pattern);
