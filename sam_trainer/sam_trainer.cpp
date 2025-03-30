@@ -1,17 +1,59 @@
 #include "sam_trainer.hpp"
 
-FILE* log_file;
+FILE* log_file = nullptr;
 string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 2022\\projects\\sam_trainer\\sam_trainer_log.txt";
-HANDLE sam_process;
-HWND sam_window;
-DWORD imgui_thread_id;
 
-shared_ptr<s_module> sam_trainer_dll, sam2game_dll, core_dll, engine_dll;
+sam_process_t sam_process;
 
-shared_ptr<s_func> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover, on_explode, 
+shared_ptr<s_module_t> sam_trainer_dll, sam2game_dll, core_dll, engine_dll;
+
+shared_ptr<s_func_t> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover, on_explode,
     update_freezing_exhalation, player_on_step, simulation_step, ray_get_hit_position;
 
 PVOID get_group_mover_orig_func;
+
+s_module_t::s_module_t(HANDLE process, LPCTSTR name) {
+    if (!process) {
+        print_log("Invalid process\n");
+        return;
+    }
+    this->process = process;
+    this->module = GetModuleHandle(name);
+    if (!module) {
+        print_log("Couldn't find module %ls handle\n", name);
+        return;
+    }
+    this->name = name;
+    BOOL res = GetModuleInformation(process, module, &module_info, sizeof(MODULEINFO));
+    if (!res) {
+        print_log("Couldn't find module %ls info\n", name);
+        return;
+    }
+    print_log("Module name: %ls, address: 0x%p, size: 0x%x\n", name, module_info.lpBaseOfDll, module_info.SizeOfImage);
+}
+
+s_func_t::s_func_t(LPCTSTR func_name, shared_ptr<s_module_t> module, string pattern, string mask, 
+    PVOID detour_func, bool hook, bool hex_string) {
+    this->module = module;
+    this->detour_func = detour_func;
+    if (!hex_string) {
+        pattern = trim(pattern);
+        pattern = str_to_hex_str(pattern);
+    }
+    this->mask = trim(mask);
+    this->orig_func = sig_scan(sam_process.handle, reinterpret_cast<BYTE*>(module->module_info.lpBaseOfDll),
+        module->module_info.SizeOfImage, pattern, mask);
+    print_log("Function: %ls\n", func_name);
+    print_log("Original function address: 0x%p\n", orig_func);
+
+    if (hook) {
+        print_log("Detour function address: 0x%p\n", detour_func);
+        DetourTransactionBegin();
+        DetourUpdateThread(GetCurrentThread());
+        DetourAttach(reinterpret_cast<PVOID*>(&orig_func), detour_func);
+        DetourTransactionCommit();
+    }
+}
 
 __declspec(naked) void* __cdecl method_to_ptr(...) {
     __asm {
@@ -20,8 +62,8 @@ __declspec(naked) void* __cdecl method_to_ptr(...) {
     }
 }
 
-void init_module(shared_ptr<s_module>* module, LPCTSTR name) {
-    *module = make_shared<s_module>(sam_process, name);
+void init_module(shared_ptr<s_module_t>* module, LPCTSTR name) {
+    *module = make_shared<s_module_t>(sam_process.handle, name);
 }
 
 void init_modules() {
@@ -34,9 +76,9 @@ void init_modules() {
 void deinit() {
 }
 
-void init_func(shared_ptr<s_func>* func, LPCTSTR func_name, shared_ptr<s_module> module,
+void init_func(shared_ptr<s_func_t>* func, LPCTSTR func_name, shared_ptr<s_module_t> module,
     string pattern, string mask, PVOID detour_func, bool hook = true, bool hex_string = false) {
-    *func = make_shared<s_func>(func_name, module, pattern, mask, detour_func, hook, hex_string);
+    *func = make_shared<s_func_t>(func_name, module, pattern, mask, detour_func, hook, hex_string);
 }
 
 void init_funcs() {
@@ -82,14 +124,26 @@ void init_funcs() {
 }
 
 VOID attach() {
-    sam_process = GetCurrentProcess();
-    if (!sam_process) {
-        print_log("Couldn't find process");
-        return;
-    }
+    sam_process.handle = GetCurrentProcess();
+    print_log("Sam process handle: 0x%p\n", reinterpret_cast<DWORD>(sam_process.handle));
+    if (!sam_process.handle) return;
+
+    sam_process.id = GetCurrentProcessId();
+    print_log("Sam process id: %u\n", sam_process.id);
+    if (!sam_process.id) return;
+
+    sam_process.window_handle = get_window_handle(sam_process.id);
+    print_log("Sam window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_process.window_handle));
+    if (!sam_process.window_handle) return;
+
     init_modules();
     init_funcs();
-    CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(sam_gui_main), nullptr, NULL, &imgui_thread_id);
+
+    sam_process.imgui_thread_handle = CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(sam_gui_main), 
+        nullptr, NULL, &sam_process.imgui_thread_id);
+    print_log("Imgui handle: 0x%p, id: %u\n", reinterpret_cast<DWORD>(sam_process.imgui_thread_handle),
+        sam_process.imgui_thread_id);
+    if (!sam_process.imgui_thread_handle || !sam_process.imgui_thread_id) return;
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

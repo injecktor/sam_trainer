@@ -5,5 +5,4 @@
 #include "imgui_impl_win32.h"
 #include <d3d9.h>
 
-
 extern void WINAPI sam_gui_main();
