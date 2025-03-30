@@ -1,0 +1,3 @@
+[submodule "memtool"]
+	path = memtool
+	url = git@github.com:injecktor/memtool.git
