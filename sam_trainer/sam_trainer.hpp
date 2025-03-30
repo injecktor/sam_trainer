@@ -12,6 +12,7 @@ using namespace std;
 extern FILE* log_file;
 extern string log_file_path;
 extern HANDLE sam_process;
+extern HWND sam_window;
 
 // Separate variable due to assemble call
 extern PVOID get_group_mover_orig_func;
@@ -19,9 +20,15 @@ extern PVOID get_group_mover_orig_func;
 struct s_func;
 extern shared_ptr<s_func> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover;
 
+// gui
+extern void WINAPI sam_gui_main();
+
 // game functions
-extern void __fastcall ReceiveHealth(PVOID entity, long health_change, long arg1);
-extern void __fastcall ReceiveArmor(PVOID entity, long armor_change, long arg1);
+class game_functions {
+public:
+	void __thiscall ReceiveHealth(long health_change, long arg1);
+	void __thiscall ReceiveArmor(long armor_change, long arg1);
+};
 extern void GetGroupMover();
 
 // local functions

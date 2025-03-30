@@ -19,13 +19,28 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Visual Studio Code\memtool\memtool.cpp" />
+    <ClCompile Include="..\imgui\imgui.cpp" />
+    <ClCompile Include="..\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\imgui\imgui_impl_dx9.cpp" />
+    <ClCompile Include="..\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\memtool\memtool.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="sam_gui.cpp" />
     <ClCompile Include="sam_trainer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\Visual Studio Code\memtool\memtool.hpp" />
+    <ClInclude Include="..\imgui\imconfig.h" />
+    <ClInclude Include="..\imgui\imgui.h" />
+    <ClInclude Include="..\imgui\imgui_impl_dx9.h" />
+    <ClInclude Include="..\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="..\imgui\imgui_internal.h" />
+    <ClInclude Include="..\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\memtool\memtool.hpp" />
     <ClInclude Include="game.hpp" />
+    <ClInclude Include="sam_gui.hpp" />
     <ClInclude Include="sam_trainer.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -88,7 +103,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\p2282\OneDrive\Documents\Visual Studio 2022\projects\sam_trainer\imgui;C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -106,7 +121,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\p2282\OneDrive\Documents\Visual Studio 2022\projects\sam_trainer\imgui;C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +139,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\p2282\OneDrive\Documents\Visual Studio 2022\projects\sam_trainer\imgui;C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,7 +157,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\p2282\OneDrive\Documents\Visual Studio 2022\projects\sam_trainer\imgui;C:\Detours\include;C:\Users\p2282\OneDrive\Documents\Visual Studio Code\memtool;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
