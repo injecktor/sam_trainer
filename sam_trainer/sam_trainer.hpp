@@ -6,6 +6,8 @@
 #include <fstream>
 #include <mutex>
 
+#define STR_LEN 256
+
 using namespace mem_tool;
 using namespace std;
 
@@ -22,7 +24,7 @@ struct s_func_t;
 extern shared_ptr<s_func_t> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover;
 
 // gui
-extern void WINAPI sam_gui_main();
+extern void sam_gui_init();
 
 // game functions
 class game_functions {
@@ -40,6 +42,19 @@ void print_log(const char* format, Args ...args) {
 	log_file = fopen(log_file_path.c_str(), "a");
 	fprintf(log_file, format, args ...);
 	fclose(log_file);
+}
+
+template<typename... Args>
+void print_log_error(const char* format, Args ...args) {
+	char* new_format = new char[STR_LEN + 1];
+	strncpy(new_format, format, STR_LEN);
+	strncat(new_format, "Error: %s\n", STR_LEN);
+	DWORD error_message_id = GetLastError();
+	LPSTR error_buffer;
+	FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr, 
+		error_message_id, NULL, (LPSTR)&error_buffer, NULL, nullptr);
+	print_log(new_format, args ..., error_buffer);
+	delete new_format;
 }
 
 struct sam_process_t {

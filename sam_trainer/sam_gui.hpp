@@ -5,4 +5,12 @@
 #include "imgui_impl_win32.h"
 #include <d3d9.h>
 
-extern void WINAPI sam_gui_main();
+#include <chrono>
+#include <thread>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+extern void sam_gui_init();
+extern void sam_gui_deinit();
+
+extern void sam_gui_run();
