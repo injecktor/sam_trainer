@@ -5,6 +5,8 @@ string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 202
 
 sam_process_t sam_process;
 
+bool gui_thread_active = false;
+
 shared_ptr<s_module_t> sam_trainer_dll, sam2game_dll, core_dll, engine_dll;
 
 shared_ptr<s_func_t> receive_health, receive_armor, hv_handle_to_pointer, get_group_mover, on_explode,
@@ -76,6 +78,9 @@ void init_modules() {
 }
 
 void deinit() {
+    if (gui_thread_active) {
+        gui_thread_active = false;
+    }
 }
 
 void init_func(shared_ptr<s_func_t>* func, LPCTSTR func_name, shared_ptr<s_module_t> module,
@@ -147,6 +152,7 @@ VOID attach() {
     init_modules();
     init_funcs();
 
+    gui_thread_active = true;
     sam_process.imgui_thread_handle = CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(sam_gui_init), 
         nullptr, NULL, &sam_process.imgui_thread_id);
     if (!sam_process.imgui_thread_handle || !sam_process.imgui_thread_id) {

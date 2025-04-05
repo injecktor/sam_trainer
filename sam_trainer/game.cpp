@@ -10,7 +10,7 @@ PVOID player_entity = nullptr;
 void __thiscall game_functions::ReceiveHealth(long health_change, long arg1) {
     print_log("Hooked. ");
     print_log("Entity: 0x%p, health_change: %ld\n", this, health_change);
-    if (!player_entity) {
+    if (player_entity) {
         print_log("PLayer entity: 0x%p\n", player_entity);
     }
     if (disable_receive_health && player_entity == reinterpret_cast<PVOID>(this) && health_change < 0) {

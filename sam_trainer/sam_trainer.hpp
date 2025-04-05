@@ -17,6 +17,8 @@ extern string log_file_path;
 struct sam_process_t;
 extern sam_process_t sam_process;
 
+extern bool gui_thread_active;
+
 // Separate variable due to assemble call
 extern PVOID get_group_mover_orig_func;
 
