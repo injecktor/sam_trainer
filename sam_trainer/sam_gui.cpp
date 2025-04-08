@@ -68,10 +68,11 @@ bool create_overlay() {
 	window_process_orig = reinterpret_cast<WNDPROC>(SetWindowLongPtr(sam_process.window_handle,
 		GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_overlay_process)));
 
-	window_overlay_handle = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT,
+	window_overlay_handle = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
 		window_overlay_class.lpszClassName, _T("Dear ImGui DirectX9 Example"),
-		WS_CHILD | WS_VISIBLE, 100, 100, 300, 300, sam_process.window_handle,
+		WS_POPUP | WS_VISIBLE, 200, 100, 300, 300, NULL,
 		nullptr, window_overlay_class.hInstance, nullptr);
+	SetLayeredWindowAttributes(window_overlay_handle, RGB(0, 0, 0), 0, ULW_COLORKEY);
 
 	if (!window_overlay_handle) {
 		print_log_error("Creating window overlay failed\n");
@@ -98,6 +99,7 @@ void sam_gui_init() {
 		return;
 	}
 
+	ShowWindow(window_overlay_handle, SW_SHOWDEFAULT);
 	UpdateWindow(window_overlay_handle);
 
 	ImGui::CreateContext();
@@ -151,10 +153,7 @@ void sam_gui_run() {
 		d3d9_device->SetRenderState(D3DRS_ZENABLE, FALSE);
 		d3d9_device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
 		d3d9_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * clear_color.w * 255.0f), 
-			(int)(clear_color.y * clear_color.w * 255.0f), 
-			(int)(clear_color.z * clear_color.w * 255.0f), 
-			(int)(clear_color.w * 255.0f));
+		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA(0, 0, 0, 0);
 		d3d9_device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
 		if (d3d9_device->BeginScene() >= 0) {
 			ImGui::Render();
