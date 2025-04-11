@@ -3,9 +3,7 @@
 FILE* log_file = nullptr;
 string log_file_path = "C:\\Users\\p2282\\OneDrive\\Documents\\Visual Studio 2022\\projects\\sam_trainer\\sam_trainer_log.txt";
 
-sam_process_t sam_process;
-
-bool gui_thread_active = false;
+process_t sam_main, sam_imgui;
 
 shared_ptr<s_module_t> sam_trainer_dll, sam2game_dll, core_dll, engine_dll;
 
@@ -43,7 +41,7 @@ s_func_t::s_func_t(LPCTSTR func_name, shared_ptr<s_module_t> module, string patt
         pattern = str_to_hex_str(pattern);
     }
     this->mask = trim(mask);
-    this->orig_func = sig_scan(sam_process.handle, reinterpret_cast<BYTE*>(module->module_info.lpBaseOfDll),
+    this->orig_func = sig_scan(sam_main.handle, reinterpret_cast<BYTE*>(module->module_info.lpBaseOfDll),
         module->module_info.SizeOfImage, pattern, mask);
     print_log("Function: %ls\n", func_name);
     print_log("Original function address: 0x%p\n", orig_func);
@@ -66,7 +64,7 @@ __declspec(naked) void* __cdecl method_to_ptr(...) {
 }
 
 void init_module(shared_ptr<s_module_t>* module, LPCTSTR name) {
-    *module = make_shared<s_module_t>(sam_process.handle, name);
+    *module = make_shared<s_module_t>(sam_main.handle, name);
 }
 
 void init_modules() {
@@ -78,8 +76,8 @@ void init_modules() {
 }
 
 void deinit() {
-    if (gui_thread_active) {
-        gui_thread_active = false;
+    if (sam_imgui.is_thread_active) {
+        sam_imgui.is_thread_active = false;
     }
 }
 
@@ -131,40 +129,40 @@ void init_funcs() {
 }
 
 VOID attach() {
-    sam_process.handle = GetCurrentProcess();
-    if (!sam_process.handle) {
+    sam_main.handle = GetCurrentProcess();
+    if (!sam_main.handle) {
         print_log_error("Get process failed\n");
         return;
     }
-
-    sam_process.id = GetCurrentProcessId();
-    if (!sam_process.id) {
+    sam_main.id = GetCurrentProcessId();
+    if (!sam_main.id) {
         print_log_error("Get process id failed\n");
         return;
     }
-
-    sam_process.window_handle = get_window_handle(sam_process.id);
-    if (!sam_process.window_handle) {
+    sam_main.window_handle = get_window_handle(sam_main.id);
+    if (!sam_main.window_handle) {
         print_log("Get window handle failed\n");
         return;
     }
+    sam_main.window_procedure = nullptr;
+    sam_main.window_class = WNDCLASSEXW();
+    sam_main.thread_handle = nullptr;
+    sam_main.thread_id = NULL;
+    sam_main.is_thread_active = false;
+
+    print_log("Sam process handle: 0x%p\n", reinterpret_cast<DWORD>(sam_main.handle));
+    print_log("Sam process id: %u\n", sam_main.id);
+    print_log("Sam window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_main.window_handle));
 
     init_modules();
     init_funcs();
 
-    gui_thread_active = true;
-    sam_process.imgui_thread_handle = CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(sam_gui_init), 
-        nullptr, NULL, &sam_process.imgui_thread_id);
-    if (!sam_process.imgui_thread_handle || !sam_process.imgui_thread_id) {
+    sam_imgui.thread_handle = CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(sam_gui_init),
+        nullptr, NULL, &sam_imgui.thread_id);
+    if (!sam_imgui.thread_handle || !sam_imgui.thread_id) {
         print_log_error("Get imgui thread failed\n");
         return;
     }
-
-    print_log("Sam process handle: 0x%p\n", reinterpret_cast<DWORD>(sam_process.handle));
-    print_log("Sam process id: %u\n", sam_process.id);
-    print_log("Sam window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_process.window_handle));
-    print_log("Imgui thread handle: 0x%p\n", reinterpret_cast<DWORD>(sam_process.imgui_thread_handle));
-    print_log("Imgui thread id: %u\n", sam_process.imgui_thread_id);
 }
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {

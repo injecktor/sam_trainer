@@ -6,13 +6,7 @@
 IDirect3D9 *d3d9;
 IDirect3DDevice9 *d3d9_device;
 
-HWND window_overlay_handle = nullptr;
-WNDPROC window_process_orig = nullptr;
-WNDCLASSEXW window_overlay_class;
-
 bool menu_opened;
-
-RECT client_area;
 
 bool create_device_d3d(HWND window_handle) {
 	if ((d3d9 = Direct3DCreate9(D3D_SDK_VERSION)) == nullptr) {
@@ -36,7 +30,7 @@ bool create_device_d3d(HWND window_handle) {
 
 static bool is_focus = false;
 
-LRESULT WINAPI window_overlay_process(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
+LRESULT WINAPI imgui_window_procedure(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
 {
 	if (ImGui_ImplWin32_WndProcHandler(window_handle, message, w_param, l_param)) {
 		return true;
@@ -47,9 +41,11 @@ LRESULT WINAPI window_overlay_process(HWND window_handle, UINT message, WPARAM w
 		if (VK_HOME) {
 			is_focus = !is_focus;
 			if (is_focus) {
-				SetActiveWindow(sam_process.window_handle);
+				ShowWindow(sam_imgui.window_handle, SW_SHOW);
+				SetActiveWindow(sam_imgui.window_handle);
 			} else {
-				SetActiveWindow(window_overlay_handle);
+				ShowWindow(sam_imgui.window_handle, SW_HIDE);
+				SetActiveWindow(sam_main.window_handle);
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
@@ -61,70 +57,75 @@ LRESULT WINAPI window_overlay_process(HWND window_handle, UINT message, WPARAM w
 		return true;
 	}
 
-	return CallWindowProc(window_process_orig, window_handle, message, w_param, l_param);
+	return CallWindowProc(sam_main.window_procedure, window_handle, message, w_param, l_param);
 }
 
-bool create_overlay() {
-	window_overlay_class.cbSize = sizeof(window_overlay_class);
-	window_overlay_class.hInstance = GetModuleHandle(nullptr);
-	window_overlay_class.lpszClassName = _T("sam_gui_overlay");
-	window_overlay_class.lpfnWndProc = window_overlay_process;
-	window_overlay_class.style = CS_CLASSDC;
-	window_overlay_class.cbClsExtra = NULL;
-	window_overlay_class.cbWndExtra = NULL;
-	window_overlay_class.lpszMenuName = _T("sam_gui");
+bool create_imgui_window() {
+	sam_imgui.handle = nullptr;
+	sam_imgui.id = NULL;
+	sam_imgui.window_procedure = imgui_window_procedure;
 
-	if (!RegisterClassEx(&window_overlay_class)) {
-		print_log_error("Registering class for window overlay failed\n");
+	sam_imgui.window_class.cbSize = sizeof(sam_imgui.window_class);
+	sam_imgui.window_class.hInstance = GetModuleHandle(nullptr);
+	sam_imgui.window_class.lpszClassName = _T("sam_gui_overlay");
+	sam_imgui.window_class.lpfnWndProc = sam_imgui.window_procedure;
+	sam_imgui.window_class.style = CS_CLASSDC;
+	sam_imgui.window_class.cbClsExtra = NULL;
+	sam_imgui.window_class.cbWndExtra = NULL;
+	sam_imgui.window_class.lpszMenuName = _T("sam_gui");
+
+	if (!RegisterClassEx(&sam_imgui.window_class)) {
+		print_log_error("Registering class for imgui window failed\n");
 		return false;
 	}
-	print_log("Registered class instance: 0x%p, name: %ls\n", window_overlay_class.hInstance, 
-		window_overlay_class.lpszClassName);
 
-	window_process_orig = reinterpret_cast<WNDPROC>(SetWindowLongPtr(sam_process.window_handle,
-		GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_overlay_process)));
+	sam_main.window_procedure = reinterpret_cast<WNDPROC>(SetWindowLongPtr(sam_main.window_handle,
+		GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(imgui_window_procedure)));
 
-	GetWindowRect(sam_process.window_handle, &client_area);
+	RECT sam_window_area;
+	GetWindowRect(sam_main.window_handle, &sam_window_area);
 
-	window_overlay_handle = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
-		window_overlay_class.lpszClassName, _T("Dear ImGui DirectX9 Example"),
-		WS_POPUP, client_area.left, client_area.top, 300, 300, sam_process.window_handle,
-		nullptr, window_overlay_class.hInstance, nullptr);
-	SetLayeredWindowAttributes(window_overlay_handle, RGB(0, 0, 0), 0, ULW_COLORKEY);
+	sam_imgui.window_handle = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
+		sam_imgui.window_class.lpszClassName, _T("Dear ImGui DirectX9 Example"),
+		WS_POPUP, sam_window_area.left, sam_window_area.top, 300, 300, sam_main.window_handle,
+		nullptr, sam_imgui.window_class.hInstance, nullptr);
+	SetLayeredWindowAttributes(sam_imgui.window_handle, RGB(0, 0, 0), 0, ULW_COLORKEY);
 
-	if (!window_overlay_handle) {
-		print_log_error("Creating window overlay failed\n");
+	if (!sam_imgui.window_handle) {
+		print_log_error("Creating imgui window failed\n");
 		return false;
 	}
-	if (!window_process_orig) {
+	if (!sam_imgui.window_procedure) {
 		print_log_error("Setting window process failed\n");
 		return false;
 	}
+
+	print_log("ImGui window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.window_handle));
+	print_log("ImGui window procedure: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.window_procedure));
+	print_log("ImGui window class: 0x%p, name: %ls\n", sam_imgui.window_class.hInstance,
+		sam_imgui.window_class.lpszClassName);
+	print_log("ImGui thread handle: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.thread_handle));
+	print_log("ImGui thread id: %u\n", sam_imgui.thread_id);
 
 	return true;
 }
 
 void sam_gui_init() {
 	IMGUI_CHECKVERSION();
+	sam_imgui.is_thread_active = true;
 
-	if (!create_overlay()) {
-		print_log("Creating overlay failed\n");
-		return;
-	}
+	create_imgui_window();
 
-	if (!create_device_d3d(window_overlay_handle)) {
+	if (!create_device_d3d(sam_imgui.window_handle)) {
 		print_log("Creating device failed\n");
 		return;
 	}
-
-	ShowWindow(window_overlay_handle, SW_SHOWDEFAULT);
-	UpdateWindow(window_overlay_handle);
 
 	ImGui::CreateContext();
 	static ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	ImGui_ImplWin32_Init(window_overlay_handle);
+	ImGui_ImplWin32_Init(sam_imgui.window_handle);
 	ImGui_ImplDX9_Init(d3d9_device);
 
 	print_log("sam_gui_initted\n");
@@ -145,12 +146,12 @@ void sam_gui_deinit() {
 		d3d9 = nullptr;
 	}
 
-	DestroyWindow(window_overlay_handle);
-	UnregisterClassW(window_overlay_class.lpszClassName, window_overlay_class.hInstance);
+	DestroyWindow(sam_imgui.window_handle);
+	UnregisterClassW(sam_imgui.window_class.lpszClassName, sam_imgui.window_class.hInstance);
 }
 
 void sam_gui_run() {
-	while (gui_thread_active) {
+	while (sam_imgui.is_thread_active) {
 		MSG msg;
 		while (PeekMessage(&msg, nullptr, NULL, NULL, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -186,8 +187,8 @@ void sam_gui_run() {
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
-	sam_process.imgui_thread_handle = nullptr;
-	sam_process.imgui_thread_id = 0;
+	sam_imgui.thread_handle = nullptr;
+	sam_imgui.thread_id = 0;
 	sam_gui_deinit();
 	print_log("ImGui drawing ended\n");
 }

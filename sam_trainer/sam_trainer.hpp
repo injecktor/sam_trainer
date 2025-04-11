@@ -14,10 +14,8 @@ using namespace std;
 extern FILE* log_file;
 extern string log_file_path;
 
-struct sam_process_t;
-extern sam_process_t sam_process;
-
-extern bool gui_thread_active;
+struct process_t;
+extern process_t sam_main, sam_imgui;
 
 // Separate variable due to assemble call
 extern PVOID get_group_mover_orig_func;
@@ -49,6 +47,7 @@ void print_log(const char* format, Args ...args) {
 template<typename... Args>
 void print_log_error(const char* format, Args ...args) {
 	char* new_format = new char[STR_LEN + 1];
+	new_format[STR_LEN] = 0;
 	strncpy(new_format, format, STR_LEN);
 	strncat(new_format, "Error: %s\n", STR_LEN);
 	DWORD error_message_id = GetLastError();
@@ -59,12 +58,15 @@ void print_log_error(const char* format, Args ...args) {
 	delete new_format;
 }
 
-struct sam_process_t {
+struct process_t {
 	HANDLE handle;
 	DWORD id;
 	HWND window_handle;
-	HANDLE imgui_thread_handle;
-	DWORD imgui_thread_id;
+	WNDPROC window_procedure;
+	WNDCLASSEXW window_class;
+	HANDLE thread_handle;
+	DWORD thread_id;
+	bool is_thread_active;
 };
 
 struct s_module_t {
@@ -83,6 +85,7 @@ struct s_func_t {
 	string pattern;
 	string mask;
 	s_func_t() = delete;
+	// hex_string = true wasn't tested
 	explicit s_func_t(LPCTSTR func_name, shared_ptr<s_module_t> module, string pattern, string mask,
 		PVOID detour_func, bool hook, bool hex_string);
 };
