@@ -17,7 +17,7 @@
     <ClCompile Include="sam_trainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game.cpp">
+    <ClCompile Include="sam_funcs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sam_gui.cpp">
@@ -46,7 +46,7 @@
     <ClInclude Include="sam_trainer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="game.hpp">
+    <ClInclude Include="sam_funcs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sam_gui.hpp">

@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "sam_funcs.hpp"
 
 #include "imgui.h"
 #include "imgui_impl_dx9.h"

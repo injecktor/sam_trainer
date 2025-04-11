@@ -1,4 +1,4 @@
-#include "game.hpp"
+#include "sam_funcs.hpp"
 
 bool disable_receive_health = false;
 bool disable_receive_armor = false;

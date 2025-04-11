@@ -28,7 +28,8 @@ bool create_device_d3d(HWND window_handle) {
 	return true;
 }
 
-static bool is_focus = false;
+static bool is_imgui_window_focus = false;
+static bool is_button_pressed = false;
 
 LRESULT WINAPI imgui_window_procedure(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
 {
@@ -39,15 +40,21 @@ LRESULT WINAPI imgui_window_procedure(HWND window_handle, UINT message, WPARAM w
 	switch (message) {
 	case WM_KEYDOWN:
 		if (VK_HOME) {
-			is_focus = !is_focus;
-			if (is_focus) {
+			is_button_pressed = true;
+		}
+		break;
+	case WM_KEYUP:
+		if (VK_HOME && is_button_pressed) {
+			is_imgui_window_focus = !is_imgui_window_focus;
+			if (is_imgui_window_focus) {
 				ShowWindow(sam_imgui.window_handle, SW_SHOW);
 				SetActiveWindow(sam_imgui.window_handle);
-			} else {
+			}
+			else {
 				ShowWindow(sam_imgui.window_handle, SW_HIDE);
 				SetActiveWindow(sam_main.window_handle);
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			is_button_pressed = false;
 		}
 		break;
 	}
@@ -87,7 +94,8 @@ bool create_imgui_window() {
 
 	sam_imgui.window_handle = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
 		sam_imgui.window_class.lpszClassName, _T("Dear ImGui DirectX9 Example"),
-		WS_POPUP, sam_window_area.left, sam_window_area.top, 300, 300, sam_main.window_handle,
+		WS_POPUP, sam_window_area.left, sam_window_area.top, sam_window_area.right - sam_window_area.left, 
+		sam_window_area.bottom - sam_window_area.top, sam_main.window_handle,
 		nullptr, sam_imgui.window_class.hInstance, nullptr);
 	SetLayeredWindowAttributes(sam_imgui.window_handle, RGB(0, 0, 0), 0, ULW_COLORKEY);
 
@@ -121,8 +129,12 @@ void sam_gui_init() {
 		return;
 	}
 
+	d3d9_device->SetRenderState(D3DRS_ZENABLE, FALSE);
+	d3d9_device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	d3d9_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+
 	ImGui::CreateContext();
-	static ImGuiIO& io = ImGui::GetIO(); (void)io;
+	static ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 	ImGui_ImplWin32_Init(sam_imgui.window_handle);
@@ -161,19 +173,18 @@ void sam_gui_run() {
 		ImGui_ImplDX9_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
-
-		ImGui::Begin("My Super menu", &menu_opened);
-		{
-			ImGui::Text("Hello World!");
+		if (GetActiveWindow() == sam_imgui.window_handle) {
+			ImGui::Begin("My Super menu", &menu_opened);
+			{
+				ImGui::Text("Hello World!");
+			}
+			ImGui::End();
 		}
-		ImGui::End();
-
+		else {
+			is_imgui_window_focus = false;
+		}
 		ImGui::EndFrame();
-		d3d9_device->SetRenderState(D3DRS_ZENABLE, FALSE);
-		d3d9_device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-		d3d9_device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-		D3DCOLOR clear_col_dx = D3DCOLOR_RGBA(0, 0, 0, 0);
-		d3d9_device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
+		d3d9_device->Clear(0, nullptr, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, D3DCOLOR_RGBA(0, 0, 0, 0), 1.0f, 0);
 		if (d3d9_device->BeginScene() >= 0) {
 			ImGui::Render();
 			ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
@@ -184,7 +195,6 @@ void sam_gui_run() {
 		if (result == D3DERR_DEVICELOST) {
 			break;
 		}
-
 		std::this_thread::sleep_for(std::chrono::milliseconds(30));
 	}
 	sam_imgui.thread_handle = nullptr;

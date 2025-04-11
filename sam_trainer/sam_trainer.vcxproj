@@ -25,7 +25,7 @@
     <ClCompile Include="..\imgui\imgui_impl_win32.cpp" />
     <ClCompile Include="..\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\memtool\memtool.cpp" />
-    <ClCompile Include="game.cpp" />
+    <ClCompile Include="sam_funcs.cpp" />
     <ClCompile Include="sam_gui.cpp" />
     <ClCompile Include="sam_trainer.cpp" />
   </ItemGroup>
@@ -39,7 +39,7 @@
     <ClInclude Include="..\imgui\imstb_textedit.h" />
     <ClInclude Include="..\imgui\imstb_truetype.h" />
     <ClInclude Include="..\memtool\memtool.hpp" />
-    <ClInclude Include="game.hpp" />
+    <ClInclude Include="sam_funcs.hpp" />
     <ClInclude Include="sam_gui.hpp" />
     <ClInclude Include="sam_trainer.hpp" />
   </ItemGroup>
