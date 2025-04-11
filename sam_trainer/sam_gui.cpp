@@ -8,11 +8,11 @@ IDirect3DDevice9 *d3d9_device;
 
 HWND window_overlay_handle = nullptr;
 WNDPROC window_process_orig = nullptr;
-HMENU window_process_id = reinterpret_cast<HMENU>(0xa1b5c7d3);
 WNDCLASSEXW window_overlay_class;
 
 bool menu_opened;
-ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+RECT client_area;
 
 bool create_device_d3d(HWND window_handle) {
 	if ((d3d9 = Direct3DCreate9(D3D_SDK_VERSION)) == nullptr) {
@@ -34,18 +34,34 @@ bool create_device_d3d(HWND window_handle) {
 	return true;
 }
 
-LRESULT WINAPI window_overlay_process(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static bool is_focus = false;
+
+LRESULT WINAPI window_overlay_process(HWND window_handle, UINT message, WPARAM w_param, LPARAM l_param)
 {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam)) {
+	if (ImGui_ImplWin32_WndProcHandler(window_handle, message, w_param, l_param)) {
 		return true;
 	}
 
-	if (uMsg == WM_DESTROY) {
+	switch (message) {
+	case WM_KEYDOWN:
+		if (VK_HOME) {
+			is_focus = !is_focus;
+			if (is_focus) {
+				SetActiveWindow(sam_process.window_handle);
+			} else {
+				SetActiveWindow(window_overlay_handle);
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+		break;
+	}
+
+	if (message == WM_DESTROY) {
 		PostQuitMessage(0);
 		return true;
 	}
 
-	return CallWindowProc(window_process_orig, hWnd, uMsg, wParam, lParam);
+	return CallWindowProc(window_process_orig, window_handle, message, w_param, l_param);
 }
 
 bool create_overlay() {
@@ -68,9 +84,11 @@ bool create_overlay() {
 	window_process_orig = reinterpret_cast<WNDPROC>(SetWindowLongPtr(sam_process.window_handle,
 		GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_overlay_process)));
 
+	GetWindowRect(sam_process.window_handle, &client_area);
+
 	window_overlay_handle = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_NOACTIVATE,
 		window_overlay_class.lpszClassName, _T("Dear ImGui DirectX9 Example"),
-		WS_POPUP | WS_VISIBLE, 200, 100, 300, 300, NULL,
+		WS_POPUP, client_area.left, client_area.top, 300, 300, sam_process.window_handle,
 		nullptr, window_overlay_class.hInstance, nullptr);
 	SetLayeredWindowAttributes(window_overlay_handle, RGB(0, 0, 0), 0, ULW_COLORKEY);
 
