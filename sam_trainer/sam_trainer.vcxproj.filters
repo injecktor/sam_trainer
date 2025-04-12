@@ -79,5 +79,8 @@
     <ClInclude Include="..\memtool\memtool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="offsets.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

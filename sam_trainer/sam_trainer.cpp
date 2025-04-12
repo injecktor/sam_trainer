@@ -79,6 +79,7 @@ void deinit() {
     if (sam_imgui.is_thread_active) {
         sam_imgui.is_thread_active = false;
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 void init_func(shared_ptr<s_func_t>* func, LPCTSTR func_name, shared_ptr<s_module_t> module,
@@ -150,9 +151,9 @@ VOID attach() {
     sam_main.thread_id = NULL;
     sam_main.is_thread_active = false;
 
-    print_log("Sam process handle: 0x%p\n", reinterpret_cast<DWORD>(sam_main.handle));
+    print_log("Sam process handle: 0x%p\n", reinterpret_cast<PVOID>(sam_main.handle));
     print_log("Sam process id: %u\n", sam_main.id);
-    print_log("Sam window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_main.window_handle));
+    print_log("Sam window handle: 0x%p\n", reinterpret_cast<PVOID>(sam_main.window_handle));
 
     init_modules();
     init_funcs();
@@ -171,15 +172,17 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
             log_file = fopen(log_file_path.c_str(), "w");
             fprintf(log_file, "DLL_PROCESS_ATTACH\n");
             fclose(log_file);
-            attach();
+            CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(attach),
+                nullptr, NULL, nullptr);
+            DisableThreadLibraryCalls(hinstDLL);
             break;
 
         case DLL_THREAD_ATTACH:
-            print_log("DLL_THREAD_ATTACH\n");
+            //print_log("DLL_THREAD_ATTACH\n");
             break;
 
         case DLL_THREAD_DETACH:
-            print_log("DLL_THREAD_DETACH\n");
+            //print_log("DLL_THREAD_DETACH\n");
             break;
 
         case DLL_PROCESS_DETACH:

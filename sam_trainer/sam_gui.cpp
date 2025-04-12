@@ -8,26 +8,6 @@ IDirect3DDevice9 *d3d9_device;
 
 bool menu_opened;
 
-bool create_device_d3d(HWND window_handle) {
-	if ((d3d9 = Direct3DCreate9(D3D_SDK_VERSION)) == nullptr) {
-		return false;
-	}
-
-	D3DPRESENT_PARAMETERS d3d_params = { };
-	d3d_params.Windowed = TRUE;
-	d3d_params.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3d_params.hDeviceWindow = window_handle;
-	d3d_params.BackBufferFormat = D3DFMT_UNKNOWN;
-	d3d_params.EnableAutoDepthStencil = TRUE;
-	d3d_params.AutoDepthStencilFormat = D3DFMT_D16;
-	d3d_params.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
-	if (d3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3d_params.hDeviceWindow,
-		D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3d_params, &d3d9_device) < 0) {
-		return false;
-	}
-	return true;
-}
-
 static bool is_imgui_window_focus = false;
 static bool is_button_pressed = false;
 
@@ -39,12 +19,12 @@ LRESULT WINAPI imgui_window_procedure(HWND window_handle, UINT message, WPARAM w
 
 	switch (message) {
 	case WM_KEYDOWN:
-		if (VK_HOME) {
+		if (w_param == VK_HOME) {
 			is_button_pressed = true;
 		}
 		break;
 	case WM_KEYUP:
-		if (VK_HOME && is_button_pressed) {
+		if (w_param == VK_HOME && is_button_pressed) {
 			is_imgui_window_focus = !is_imgui_window_focus;
 			if (is_imgui_window_focus) {
 				ShowWindow(sam_imgui.window_handle, SW_SHOW);
@@ -67,6 +47,55 @@ LRESULT WINAPI imgui_window_procedure(HWND window_handle, UINT message, WPARAM w
 	return CallWindowProc(sam_main.window_procedure, window_handle, message, w_param, l_param);
 }
 
+bool create_device_d3d(HWND window_handle) {
+	if ((d3d9 = Direct3DCreate9(D3D_SDK_VERSION)) == nullptr) {
+		print_log("Creating direct3d failed\n");
+		return false;
+	}
+
+	D3DPRESENT_PARAMETERS d3d_params = { };
+	d3d_params.Windowed = FALSE;
+	d3d_params.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	d3d_params.hDeviceWindow = window_handle;
+	d3d_params.BackBufferFormat = D3DFMT_UNKNOWN;
+	d3d_params.EnableAutoDepthStencil = TRUE;
+	d3d_params.AutoDepthStencilFormat = D3DFMT_D16;
+	d3d_params.PresentationInterval = D3DPRESENT_INTERVAL_ONE;
+	if (d3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3d_params.hDeviceWindow,
+		D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3d_params, &d3d9_device) < 0) {
+		d3d_params.Windowed = TRUE;
+		print_log("Creating fullscreen device failed. Creating windowed..\n");
+		if (d3d9->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, d3d_params.hDeviceWindow,
+			D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3d_params, &d3d9_device) < 0) {
+			print_log("Creating windowed device failed\n");
+			return false;
+		}
+	}
+	return true;
+}
+
+void sam_gui_deinit() {
+	ImGui_ImplDX9_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
+	if (d3d9_device) {
+		d3d9_device->Release();
+		d3d9_device = nullptr;
+	}
+	if (d3d9) {
+		d3d9->Release();
+		d3d9 = nullptr;
+	}
+
+	if (sam_imgui.window_handle) {
+		DestroyWindow(sam_imgui.window_handle);
+	}
+	if (sam_imgui.window_class.hInstance) {
+		UnregisterClassW(sam_imgui.window_class.lpszClassName, sam_imgui.window_class.hInstance);
+	}
+}
+
 bool create_imgui_window() {
 	sam_imgui.handle = nullptr;
 	sam_imgui.id = NULL;
@@ -74,7 +103,7 @@ bool create_imgui_window() {
 
 	sam_imgui.window_class.cbSize = sizeof(sam_imgui.window_class);
 	sam_imgui.window_class.hInstance = GetModuleHandle(nullptr);
-	sam_imgui.window_class.lpszClassName = _T("sam_gui_overlay");
+	sam_imgui.window_class.lpszClassName = _T("sam_gui_window");
 	sam_imgui.window_class.lpfnWndProc = sam_imgui.window_procedure;
 	sam_imgui.window_class.style = CS_CLASSDC;
 	sam_imgui.window_class.cbClsExtra = NULL;
@@ -108,11 +137,12 @@ bool create_imgui_window() {
 		return false;
 	}
 
-	print_log("ImGui window handle: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.window_handle));
-	print_log("ImGui window procedure: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.window_procedure));
+	print_log("Sam window procedure: 0x%p\n", reinterpret_cast<PVOID>(sam_main.window_procedure));
+	print_log("ImGui window handle: 0x%p\n", reinterpret_cast<PVOID>(sam_imgui.window_handle));
+	print_log("ImGui window procedure: 0x%p\n", reinterpret_cast<PVOID>(sam_imgui.window_procedure));
 	print_log("ImGui window class: 0x%p, name: %ls\n", sam_imgui.window_class.hInstance,
 		sam_imgui.window_class.lpszClassName);
-	print_log("ImGui thread handle: 0x%p\n", reinterpret_cast<DWORD>(sam_imgui.thread_handle));
+	print_log("ImGui thread handle: 0x%p\n", reinterpret_cast<PVOID>(sam_imgui.thread_handle));
 	print_log("ImGui thread id: %u\n", sam_imgui.thread_id);
 
 	return true;
@@ -122,10 +152,13 @@ void sam_gui_init() {
 	IMGUI_CHECKVERSION();
 	sam_imgui.is_thread_active = true;
 
-	create_imgui_window();
+	if (!create_imgui_window()) {
+		sam_gui_deinit();
+		return;
+	}
 
 	if (!create_device_d3d(sam_imgui.window_handle)) {
-		print_log("Creating device failed\n");
+		sam_gui_deinit();
 		return;
 	}
 
@@ -144,22 +177,33 @@ void sam_gui_init() {
 	sam_gui_run();
 }
 
-void sam_gui_deinit() {
-	ImGui_ImplDX9_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-
-	if (d3d9_device) {
-		d3d9_device->Release();
-		d3d9_device = nullptr;
+void gui_draw() {
+	ImGui::Begin("My Super menu", &menu_opened);
+	{
+		ImGui::Checkbox("Invincibility (hp)", &disable_receive_health);
+		ImGui::Checkbox("Invincibility (armor)", &disable_receive_armor);
+		ImGui::SetNextItemWidth(200);
+		ImGui::SetCursorPos(ImVec2(200, 20));
+		if (ImGui::SliderInt("hp", &hp, 10, 1000)) {
+			set_entity_property_by_offset(sam_offsets::hp, &hp);
+		}
+		ImGui::SetNextItemWidth(200);
+		ImGui::SetCursorPos(ImVec2(200, 40));
+		if (ImGui::SliderInt("armor", &armor, 10, 1000)) {
+			set_entity_property_by_offset(sam_offsets::armor, &armor);
+		}
+		ImGui::SetNextItemWidth(200);
+		ImGui::SetCursorPos(ImVec2(200, 60));
+		if (ImGui::SliderInt("max_hp", &max_hp, 10, 1000)) {
+			set_entity_property_by_offset(sam_offsets::max_hp, &max_hp);
+		}
+		ImGui::SetNextItemWidth(200);
+		ImGui::SetCursorPos(ImVec2(200, 80));
+		if (ImGui::SliderInt("max_armor", &max_armor, 10, 1000)) {
+			set_entity_property_by_offset(sam_offsets::max_armor, &max_armor);
+		}
 	}
-	if (d3d9) {
-		d3d9->Release();
-		d3d9 = nullptr;
-	}
-
-	DestroyWindow(sam_imgui.window_handle);
-	UnregisterClassW(sam_imgui.window_class.lpszClassName, sam_imgui.window_class.hInstance);
+	ImGui::End();
 }
 
 void sam_gui_run() {
@@ -174,11 +218,7 @@ void sam_gui_run() {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 		if (GetActiveWindow() == sam_imgui.window_handle) {
-			ImGui::Begin("My Super menu", &menu_opened);
-			{
-				ImGui::Text("Hello World!");
-			}
-			ImGui::End();
+			gui_draw();
 		}
 		else {
 			is_imgui_window_focus = false;
